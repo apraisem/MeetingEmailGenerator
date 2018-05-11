@@ -12,6 +12,9 @@ import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.Toast;
 
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+
 //This activity displays all editable fields and allows an email or text message to be sent using the content
 //entered in via the UI. Users will use their devices email and text contact lists to send meeting info.
 public class MainActivity extends AppCompatActivity {
@@ -30,6 +33,7 @@ public class MainActivity extends AppCompatActivity {
         String mtgMtgDesc;
     Button btnEmail;
     Button btnText;
+    DatabaseReference myDbRef;
 
 
     //onCreate method, initializes variables and calls methods to spinners and buttons
@@ -38,7 +42,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        //Initialize variables and calls methods
+        // set up widget links to layout and call methods to spinners and buttons
         etTitle = (EditText) findViewById(R.id.etTitle);
         etDate = (EditText) findViewById(R.id.etDate);
         selectStartTime();
@@ -47,30 +51,43 @@ public class MainActivity extends AppCompatActivity {
         etMtgDesc = (EditText) findViewById(R.id.etMtgDesc);
         addListenerOnButtonEmail();
         addListenerOnButtonText();
+
+        // Write a message to the database
+        FirebaseDatabase database = FirebaseDatabase.getInstance();
+        myDbRef = database.getReference("My Meetings");
     }
 
 
-    //Called from the onCreate method. Spinner method for setting start time
+    //Called from the onCreate method. Spinner method for setting meeting start time
     private void selectStartTime() {
+        //set up start time to layout
         spStartTime = (Spinner) findViewById(R.id.spStartTime);
+        //get data from the array
         ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this,R.array.start_time_array, android.R.layout.simple_spinner_item);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        //set to adapter
         spStartTime.setAdapter(adapter);
 
     }
     //Called from the onCreate method. Spinner method for setting meeting length
     private void selectHowLong(){
+        //set up length to layout
         spLength = (Spinner) findViewById(R.id.spLength);
+        //get data from the array
         ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this,R.array.meeting_length_array, android.R.layout.simple_spinner_item);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        //set to adapter
         spLength.setAdapter(adapter);
 
     }
     //Called from the onCreate method. Spinner method for selecting repeat method
     private void selectRepeated(){
+        //set up repeat to layout
         spRepeated = (Spinner) findViewById(R.id.spRepeated);
+        //get data from the array
         ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this,R.array.repeated_array, android.R.layout.simple_spinner_item);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        //set to adapter
         spRepeated.setAdapter(adapter);
 
 
@@ -84,17 +101,33 @@ public class MainActivity extends AppCompatActivity {
     btnEmail.setOnClickListener(new View.OnClickListener() {
         @Override
         public void onClick(View v) {
+            //call method to convert layout data to strings
             conversion();
-            Intent emailIntent = new Intent(android.content.Intent.ACTION_SEND);
-            emailIntent.putExtra(android.content.Intent.EXTRA_SUBJECT, "Meeting: " + mtgTitle);
-            emailIntent.putExtra(android.content.Intent.EXTRA_TEXT, "Meeting Title: " + mtgTitle +
+            Log.d("CIS3334", "Saving Meeting: ");        // debugging log
+            // ---- Get a new database key for the meeting
+            String key = myDbRef.child("All My Meetings").push().getKey();
+            //set data to value in database
+            myDbRef.child("All My Meetings").child(key).setValue("Meeting Title: " + mtgTitle +
                     '\n' + "Date: " + mtgDate +
                     '\n' + "Start Time: " + mtgStartTime +
                     '\n' + "Length of Meeting (in hours): " + mtgLength +
                     '\n' + "Repeated?: " + mtgRepeated +
                     '\n' + "Meeting Description: " + mtgMtgDesc);
 
+            //start email intent
+            Intent emailIntent = new Intent(android.content.Intent.ACTION_SEND);
+            //set email subject
+            emailIntent.putExtra(android.content.Intent.EXTRA_SUBJECT, "Meeting: " + mtgTitle);
+            //Set email body
+            emailIntent.putExtra(android.content.Intent.EXTRA_TEXT, "Meeting Title: " + mtgTitle +
+                    '\n' + "Date: " + mtgDate +
+                    '\n' + "Start Time: " + mtgStartTime +
+                    '\n' + "Length of Meeting (in hours): " + mtgLength +
+                    '\n' + "Repeated?: " + mtgRepeated +
+                    '\n' + "Meeting Description: " + mtgMtgDesc);
+            //set email intent type
             emailIntent.setType("vnd.android.cursor.dir/event");
+            //start activity
             startActivity(emailIntent);
             finish();
         }
@@ -105,11 +138,25 @@ public class MainActivity extends AppCompatActivity {
         btnText = (Button) findViewById(R.id.btnText);
         btnText.setOnClickListener(new View.OnClickListener() {
             public void onClick(View view) {
+                //call method to convert layout data to strings
                 conversion();
-                Log.i("Send SMS", "");
+                Log.d("CIS3334", "Saving Meeting: ");        // debugging log
+                // ---- Get a new database key for the meeting
+                String key = myDbRef.child("All My Meetings").push().getKey();
+                //set data to value in database
+                myDbRef.child("All My Meetings").child(key).setValue("Meeting Title: " + mtgTitle +
+                        '\n' + "Date: " + mtgDate +
+                        '\n' + "Start Time: " + mtgStartTime +
+                        '\n' + "Length of Meeting (in hours): " + mtgLength +
+                        '\n' + "Repeated?: " + mtgRepeated +
+                        '\n' + "Meeting Description: " + mtgMtgDesc);
+
+                Log.i("Send SMS", ""); //debugging log
+                //start sms intent
                 Intent smsIntent = new Intent(Intent.ACTION_VIEW);
                 smsIntent.setData(Uri.parse("smsto:"));
                 smsIntent.setType("vnd.android-dir/mms-sms");
+                //set sms body
                 smsIntent.putExtra("sms_body"  , "Meeting Title: " + mtgTitle +
                                                    '\n' + "Date: " + mtgDate +
                                                    '\n' + "Start Time: " + mtgStartTime +
@@ -129,14 +176,14 @@ public class MainActivity extends AppCompatActivity {
     }
 //Called from the onClick method. Sets all variables to string
     private void conversion() {
+        //converts data entered in layout to strings
         mtgTitle = etTitle.getText().toString();
         mtgDate = etDate.getText().toString();
-
- //  I'm unsure how to get the items selected in the spinners to display
+        //converts data selected in spinners to strings
         mtgStartTime = (String) spStartTime.getSelectedItem().toString();
         mtgLength = (String) spLength.getSelectedItem().toString();
         mtgRepeated = (String) spRepeated.getSelectedItem().toString();
-
+        //converts data entered in layout to string
         mtgMtgDesc = etMtgDesc.getText().toString();
     }
 }

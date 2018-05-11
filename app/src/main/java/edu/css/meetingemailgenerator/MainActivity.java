@@ -133,9 +133,9 @@ public class MainActivity extends AppCompatActivity {
         mtgDate = etDate.getText().toString();
 
  //  I'm unsure how to get the items selected in the spinners to display
-        mtgStartTime = (String) spStartTime.getAdapter().toString();
-        mtgLength = (String) spLength.getAdapter().toString();
-        mtgRepeated = (String) spRepeated.getAdapter().toString();
+        mtgStartTime = (String) spStartTime.getSelectedItem().toString();
+        mtgLength = (String) spLength.getSelectedItem().toString();
+        mtgRepeated = (String) spRepeated.getSelectedItem().toString();
 
         mtgMtgDesc = etMtgDesc.getText().toString();
     }
